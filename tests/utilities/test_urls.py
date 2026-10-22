@@ -235,6 +235,35 @@ def test_url_for_work_pool(work_pool, url_type: Literal["ui", "api"]):
         assert url_for(obj=work_pool, url_type=url_type) == expected_url
 
 
+@pytest.mark.parametrize("url_type", ["ui", "api"])
+def test_url_for_work_pool_with_special_characters(url_type: Literal["ui", "api"]):
+    from prefect.client.schemas.objects import WorkPool
+
+    pool = WorkPool(name="gpu#west?blue", type="process")
+    expected_url = (
+        f"{MOCK_PREFECT_UI_URL}/work-pools/work-pool/gpu%23west%3Fblue"
+        if url_type == "ui"
+        else f"{MOCK_PREFECT_API_URL}/work_pools/gpu%23west%3Fblue"
+    )
+    with temporary_settings(
+        {PREFECT_UI_URL: MOCK_PREFECT_UI_URL, PREFECT_API_URL: MOCK_PREFECT_API_URL}
+    ):
+        assert url_for(obj=pool, url_type=url_type) == expected_url
+
+
+def test_url_for_worker_with_special_characters():
+    with temporary_settings({PREFECT_UI_URL: MOCK_PREFECT_UI_URL}):
+        assert (
+            url_for(
+                "worker",
+                obj_id="worker#1",
+                work_pool_name="gpu#west?blue",
+                url_type="ui",
+            )
+            == f"{MOCK_PREFECT_UI_URL}/work-pools/work-pool/gpu%23west%3Fblue/worker/worker%231"
+        )
+
+
 def test_api_url_for_variable(variable):
     expected_url = f"{MOCK_PREFECT_API_URL}/variables/name/{variable.name}"
     with temporary_settings({PREFECT_API_URL: MOCK_PREFECT_API_URL}):

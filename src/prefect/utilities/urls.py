@@ -473,13 +473,15 @@ def url_for(
     )
     assert url_format is not None
 
+    quoted_obj_id = urllib.parse.quote(str(obj_id), safe="")
+
     # Use duck-typing to handle both client-side and server-side ReceivedEvent
     if name == "received-event" and hasattr(obj, "occurred"):
         # Cast to ReceivedEvent for type checking - we've verified it has the
         # required attributes via hasattr and name check above
         event = cast(ReceivedEvent, obj)
         url = url_format.format(
-            occurred=event.occurred.strftime("%Y-%m-%d"), obj_id=obj_id
+            occurred=event.occurred.strftime("%Y-%m-%d"), obj_id=quoted_obj_id
         )
     else:
         obj_keys = [
@@ -493,7 +495,11 @@ def url_for(
                 f"Unable to generate URL for {name} because the following keys are missing: {', '.join(obj_keys)}"
             )
 
-        url = url_format.format(obj_id=obj_id, **additional_format_kwargs)
+        format_kwargs = {
+            k: urllib.parse.quote(str(v), safe="")
+            for k, v in additional_format_kwargs.items()
+        }
+        url = url_format.format(obj_id=quoted_obj_id, **format_kwargs)
 
     if not base_url.endswith("/"):
         base_url += "/"
